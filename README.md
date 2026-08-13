@@ -1,7 +1,14 @@
+# Swagger Petstore - OpenAPI 3.0
 
-# Getting Started with Swagger Petstore - OpenAPI 3.0
+[![Built with APIMatic][apimatic-badge]][apimatic-url] [![License: MIT][license-badge]][license-url]
 
-## Introduction
+The Swagger Petstore - OpenAPI 3.0 SDK for .NET provides access to the [Swagger Petstore - OpenAPI 3.0 REST APIs](https://swagger.io) from .NET applications.
+
+> [!TIP]
+> **Looking for a specific signature, model, enum, or error type?** This SDK ships a generated,
+> machine-readable **[SDK map](sdk-map.md)** — a lookup index of the SDK's entire C# surface. Consult it
+> **before** grepping or scanning the source tree; it answers most contract questions directly and,
+> when a source file is genuinely needed, names the exact one to open. Details under [SDK map](#sdk-map).
 
 This is a sample Pet Store Server based on the OpenAPI 3.0 specification.  You can find out more about
 Swagger at [https://swagger.io](https://swagger.io). In the third iteration of the pet store, we've switched to the design first approach!
@@ -9,153 +16,108 @@ You can now help us improve the API whether it's by making changes to the defini
 That way, with time, we can improve the API in general, and expose some of the new features in OAS3.
 
 Some useful links:
-
 - [The Pet Store repository](https://github.com/swagger-api/swagger-petstore)
 - [The source API definition for the Pet Store](https://github.com/swagger-api/swagger-petstore/blob/master/src/main/resources/openapi.yaml)
 
-Find out more about Swagger: [https://swagger.io](https://swagger.io)
+---
 
-## Install the Package
+## Installation
 
-If you are building with .NET CLI tools then you can also use the following command:
+Add the .NET SDK as a project reference into your solution:
 
 ```bash
-dotnet add package RafayApimaticTestSDK --version 1.5.1
+dotnet add reference <path-to-sdk>/SwaggerPetstoreOpenApi30.csproj
 ```
 
-You can also view the package at:
-https://www.nuget.org/packages/RafayApimaticTestSDK/1.5.1
+---
 
-## Test the SDK
+## Quick Start
 
-The generated SDK also contain one or more Tests, which are contained in the Tests project. In order to invoke these test cases, you will need `NUnit 3.0 Test Adapter Extension` for Visual Studio. Once the SDK is complied, the test cases should appear in the Test Explorer window. Here, you can click `Run All` to execute these test cases.
+### Dependency Injection
 
-## Initialize the API Client
-
-**_Note:_** Documentation for the client can be found [here.](doc/client.md)
-
-The following parameters are configurable for the API Client:
-
-| Parameter | Type | Description |
-|  --- | --- | --- |
-| Environment | [`Environment`](README.md#environments) | The API environment. <br> **Default: `Environment.Production`** |
-| Timeout | `TimeSpan` | Http client timeout.<br>*Default*: `TimeSpan.FromSeconds(30)` |
-| HttpClientConfiguration | [`Action<HttpClientConfiguration.Builder>`](doc/http-client-configuration-builder.md) | Action delegate that configures the HTTP client by using the HttpClientConfiguration.Builder for customizing API call settings.<br>*Default*: `new HttpClient()` |
-| LogBuilder | [`LogBuilder`](doc/log-builder.md) | Represents the logging configuration builder for API calls |
-| PetstoreAuthCredentials | [`PetstoreAuthCredentials`](doc/auth/oauth-2-implicit-grant.md) | The Credentials Setter for OAuth 2 Implicit Grant |
-| ApiKeyCredentials | [`ApiKeyCredentials`](doc/auth/custom-header-signature.md) | The Credentials Setter for Custom Header Signature |
-
-The API client can be initialized as follows:
-
-### Code-Based Initialization
+Register the client with `IServiceCollection` and resolve it from the container. The `HttpClient` is managed by `IHttpClientFactory`. Configure the client's behavior through [SwaggerPetstoreOpenApi30ClientOptions](SwaggerPetstoreOpenApi30ClientOptions.cs).
 
 ```csharp
-using Microsoft.Extensions.Logging;
-using SwaggerPetstoreOpenApi30.Standard;
-using SwaggerPetstoreOpenApi30.Standard.Authentication;
-using SwaggerPetstoreOpenApi30.Standard.Models;
-using System.Collections.Generic;
-
-namespace ConsoleApp;
-
-SwaggerPetstoreOpenApi30Client client = new SwaggerPetstoreOpenApi30Client.Builder()
-    .PetstoreAuthCredentials(
-        new PetstoreAuthModel.Builder(
-            "OAuthClientId",
-            "OAuthRedirectUri"
-        )
-        .OauthScopes(
-            new List<OauthScopePetstoreAuth>
-            {
-                OauthScopePetstoreAuth.Writepets,
-                OauthScopePetstoreAuth.Readpets,
-            })
-        .Build())
-    .ApiKeyCredentials(
-        new ApiKeyModel.Builder(
-            "api_key"
-        )
-        .Build())
-    .HttpClientConfig(httpClientConfig =>
-        httpClientConfig.Timeout(TimeSpan.FromSeconds(100)))
-    .Environment(SwaggerPetstoreOpenApi30.Standard.Environment.Production)
-    .LoggingConfig(config => config
-        .LogLevel(LogLevel.Information)
-        .RequestConfig(reqConfig => reqConfig.Body(true))
-        .ResponseConfig(respConfig => respConfig.Headers(true))
-    )
-    .Build();
+services.AddSwaggerPetstoreOpenApi30Client(options =>
+    {
+        options.PetstoreAuth = "YOUR_API_KEY";
+        options.ApiKey = "YOUR_API_KEY";
+        options.Environment = ServerEnvironment.Production;
+        // TODO: configure more client options here
+    });
 ```
 
-### Configuration-Based Initialization
+### Direct Instantiation
+
+Create the client by passing an `HttpClient` you manage yourself. Configure the client's behavior through [SwaggerPetstoreOpenApi30ClientOptions](SwaggerPetstoreOpenApi30ClientOptions.cs).
 
 ```csharp
-using SwaggerPetstoreOpenApi30.Standard;
-using Microsoft.Extensions.Configuration;
-
-namespace ConsoleApp;
-
-// Build the IConfiguration using .NET conventions (JSON, environment, etc.)
-var configuration = new ConfigurationBuilder()
-    .AddJsonFile("config.json")
-    .AddEnvironmentVariables() // [optional] read environment variables
-    .Build();
-
-// Instantiate your SDK and configure it from IConfiguration
-var client = SwaggerPetstoreOpenApi30Client
-    .FromConfiguration(configuration.GetSection("SwaggerPetstoreOpenApi30"));
+var httpClient = new HttpClient();
+// TODO: configure more client options here
+var options =
+    new SwaggerPetstoreOpenApi30ClientOptions
+    {
+        PetstoreAuth = "YOUR_API_KEY",
+        ApiKey = "YOUR_API_KEY",
+        Environment = ServerEnvironment.Production,
+    };
+var client = new SwaggerPetstoreOpenApi30Client(httpClient, options);
 ```
 
-See the [Configuration-Based Initialization](doc/configuration-based-initialization.md) section for details.
+---
 
-## Environments
+## Usage
 
-The SDK can be configured to use a different environment for making API calls. Available environments are:
+For code examples and error responses, see [API Reference](api-reference.md).
 
-### Fields
+## SDK map
 
-| Name | Description |
-|  --- | --- |
-| Production | **Default** |
+This SDK ships a generated **SDK map** — [`sdk-map.md`](sdk-map.md) plus the [`map/`](map/) pages — a deterministic, lookup-oriented table of contents of the SDK's C# surface, generated by APIMatic alongside this SDK.
 
-## Authorization
+**Read it before scanning the source.** Whether you are an AI coding assistant or searching by hand, the map answers "what is the exact …" by lookup for every call-level contract, and for anything it does not carry it names the one file that does — so you never have to search the source tree:
 
-This API uses the following authentication schemes.
+- **[`sdk-map.md`](sdk-map.md)** — the index: client construction, servers/auth, the options/retry reference, the SDK-wide defaults the operation rows rely on, and link tables into [`map/`](map/).
+- **[`map/operations/`](map/operations/)** — one page per controller: the exact C# signature, the return type, the error type with its typed `TryGet…` accessors, and pagination — plus, per operation, a **Type sources** table naming the file that declares every type that operation mentions.
 
-* [`petstore_auth (OAuth 2 Implicit Grant)`](doc/auth/oauth-2-implicit-grant.md)
-* [`api_key (Custom Header Signature)`](doc/auth/custom-header-signature.md)
+Model shapes — record fields with their JSON wire names, enum member names and wire values, `OneOf`/`AnyOf` union variants — are **not** duplicated in the map. Take the path from the operation's Type sources table and read the declaring file; it is the single source of truth and cannot go stale against the code.
 
-## List of APIs
+**Each operation row states what is specific to that operation.** The SDK-wide defaults are stated once in [`sdk-map.md`](sdk-map.md) — throw-only (no `Result`-style no-throw variants), no pagination, the four fixed `RawError` accessors, the `Default` server group — and a row appears only where its operation departs from one. A row silent on pagination is telling you that operation has none.
 
-* [Pet](doc/controllers/pet.md)
-* [Store](doc/controllers/store.md)
-* [User](doc/controllers/user.md)
+The **HTTP verb and route**, and the endpoint's **behavioural prose**, live on the operation itself, in the source file named at the top of its operations page. Read them there when something needs them — wiring a mock, reading a provider log, or settling a rule about what you must pass.
 
-## SDK Infrastructure
+**Workflow:** look the fact up in the map → where the map leaves something ambiguous, open the **one** source file the row names → the compiler is the backstop (a name that isn't in the map won't build). Don't scan or grep the tree to find things — the map is the locator.
 
-### Configuration
+### Which one to reach for
 
-* [Configuration-Based Initialization](doc/configuration-based-initialization.md)
-* [HttpClientConfiguration](doc/http-client-configuration.md)
-* [HttpClientConfigurationBuilder](doc/http-client-configuration-builder.md)
-* [LogBuilder](doc/log-builder.md)
-* [LogRequestBuilder](doc/log-request-builder.md)
-* [LogResponseBuilder](doc/log-response-builder.md)
-* [ProxyConfigurationBuilder](doc/proxy-configuration-builder.md)
+The map and the [API Reference](api-reference.md) answer different questions, and the map is generated from this SDK's source so it stays in lockstep with the code it describes.
 
-### HTTP
+| Use | For |
+| --- | --- |
+| **[`sdk-map.md`](sdk-map.md) + [`map/`](map/)** | Traversing the SDK and working out its surface — locating the operation you need (this SDK exposes **19 operations**), its exact signature and parameter order, the shape and JSON wire names of the models it takes and returns, which error type it throws and how to read it, and the source file behind any of it. This is the index to consume the SDK from, and the one to reach for first. |
+| **[`api-reference.md`](api-reference.md)** | Usage guidance for a single operation once you know which one you want — a runnable code sample, per-parameter descriptions, and the error responses it can return. |
 
-* [HttpCallback](doc/http-callback.md)
-* [HttpContext](doc/http-context.md)
-* [HttpRequest](doc/http-request.md)
-* [HttpResponse](doc/http-response.md)
-* [HttpStringResponse](doc/http-string-response.md)
+## Best Practices
 
-### Utilities
+> [!TIP]
+> Use a **single `SwaggerPetstoreOpenApi30Client` instance** for the lifetime of your application and
+> reuse it across all requests. Creating a new instance per request might exhaust the
+> connection pool.
 
-* [ApiException](doc/api-exception.md)
-* [ApiResponse](doc/api-response.md)
-* [ApiHelper](doc/api-helper.md)
-* [CustomDateTimeConverter](doc/custom-date-time-converter.md)
-* [UnixDateTimeConverter](doc/unix-date-time-converter.md)
+## License
 
+This SDK is distributed under the [MIT License](LICENSE).
+
+---
+
+## Support
+
+Refer to the [API reference](api-reference.md) for detailed information on available operations with code samples.
+
+For further assistance, please contact support at apiteam@swagger.io.
+
+---
+
+[license-url]: LICENSE
+[license-badge]: https://img.shields.io/badge/License-MIT-blue.svg
+[apimatic-url]: https://www.apimatic.io
+[apimatic-badge]: https://www.apimatic.io/hubfs/Built-with-APIMatic-badge.svg
