@@ -20,11 +20,11 @@ Find out more about Swagger: [https://swagger.io](https://swagger.io)
 If you are building with .NET CLI tools then you can also use the following command:
 
 ```bash
-dotnet add package RafayApimaticTestSDK --version 1.5.3
+dotnet add package RafayApimaticTestSDK --version 1.5.4
 ```
 
 You can also view the package at:
-https://www.nuget.org/packages/RafayApimaticTestSDK/1.5.3
+https://www.nuget.org/packages/RafayApimaticTestSDK/1.5.4
 
 ## Test the SDK
 
